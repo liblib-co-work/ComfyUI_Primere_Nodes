@@ -15,6 +15,9 @@ from .modules.adv_encode import advanced_encode
 import random
 import datetime
 
+from ..liblib_adapter import get_field_key_by_value
+from configs.node_fields import get_field_pre_values,ComfyUI_Primere_Nodes_Segment_Bbox_Segm_Mapping,ComfyUI_Primere_Nodes_Segment_Sam_Mapping
+
 class PrimereImageSegments:
     RETURN_TYPES = ("IMAGE", "IMAGE", "DETECTOR", "SAM_MODEL", "SEGS", "TUPLE", "INT", "INT", "TUPLE", "CONDITIONING", "CONDITIONING")
     RETURN_NAMES = ("IMAGE", "IMAGE_SEGS", "DETECTOR", "SAM_MODEL", "SEGS", "CROP_REGIONS", "IMAGE_MAX", "IMAGE_MAX_PERCENT", "SEGMENT_SETTINGS", "COND+", "COND-")
@@ -63,82 +66,84 @@ class PrimereImageSegments:
     SAMS['SAM_VIT_H_4B8939'] = 'https://huggingface.co/ybelkada/segment-anything/resolve/main/checkpoints/sam_vit_h_4b8939.pth?download=true'
     SAMS['SAM_VIT_L_0B3195'] = 'https://huggingface.co/ybelkada/segment-anything/resolve/main/checkpoints/sam_vit_l_0b3195.pth?download=true'
 
-    BBOX_PATH = os.path.join(folder_paths.models_dir, 'ultralytics', 'bbox')
-    SEGM_PATH = os.path.join(folder_paths.models_dir, 'ultralytics', 'segm')
-    GDINO_PATH = os.path.join(folder_paths.models_dir, 'grounding-dino')
-    # SAMS_PATH = os.path.join(comfy_dir, 'models', 'sams')
+    #liblib adapter 禁用下载
 
-    SAMS_PATH = os.path.join(folder_paths.models_dir, 'sams')
-    folder_paths.add_model_folder_path("sams", SAMS_PATH)
-    SAMS_FULL_LIST = folder_paths.get_filename_list("sams")
-    SAMS_LIST = folder_paths.filter_files_extensions(SAMS_FULL_LIST, ['.pth'])
+    # BBOX_PATH = os.path.join(folder_paths.models_dir, 'ultralytics', 'bbox')
+    # SEGM_PATH = os.path.join(folder_paths.models_dir, 'ultralytics', 'segm')
+    # GDINO_PATH = os.path.join(folder_paths.models_dir, 'grounding-dino')
+    # # SAMS_PATH = os.path.join(comfy_dir, 'models', 'sams')
 
-    if os.path.exists(BBOX_PATH) == False:
-        Path(BBOX_PATH).mkdir(parents=True, exist_ok=True)
-    for BBOX_KEY in BBOX:
-        FileUrl = BBOX[BBOX_KEY]
-        pathparser = urlparse(FileUrl)
-        TargetFilename = os.path.basename(pathparser.path)
-        FullFilePath = os.path.join(BBOX_PATH, TargetFilename)
-        if os.path.isfile(FullFilePath) == False:
-            ModelDownload = utility.downloader(FileUrl, FullFilePath)
+    # SAMS_PATH = os.path.join(folder_paths.models_dir, 'sams')
+    # folder_paths.add_model_folder_path("sams", SAMS_PATH)
+    # SAMS_FULL_LIST = folder_paths.get_filename_list("sams")
+    # SAMS_LIST = folder_paths.filter_files_extensions(SAMS_FULL_LIST, ['.pth'])
 
-    if os.path.exists(SEGM_PATH) == False:
-        Path(SEGM_PATH).mkdir(parents=True, exist_ok=True)
-    for SEGM_KEY in SEGM:
-        FileUrl = SEGM[SEGM_KEY]
-        pathparser = urlparse(FileUrl)
-        TargetFilename = os.path.basename(pathparser.path)
-        FullFilePath = os.path.join(SEGM_PATH, TargetFilename)
-        if os.path.isfile(FullFilePath) == False:
-            ModelDownload = utility.downloader(FileUrl, FullFilePath)
+    # if os.path.exists(BBOX_PATH) == False:
+    #     Path(BBOX_PATH).mkdir(parents=True, exist_ok=True)
+    # for BBOX_KEY in BBOX:
+    #     FileUrl = BBOX[BBOX_KEY]
+    #     pathparser = urlparse(FileUrl)
+    #     TargetFilename = os.path.basename(pathparser.path)
+    #     FullFilePath = os.path.join(BBOX_PATH, TargetFilename)
+    #     if os.path.isfile(FullFilePath) == False:
+    #         ModelDownload = utility.downloader(FileUrl, FullFilePath)
 
-    if os.path.exists(GDINO_PATH) == False:
-        Path(GDINO_PATH).mkdir(parents=True, exist_ok=True)
-    for GDINO_KEY in GDINO:
-        FileUrl = GDINO[GDINO_KEY]
-        pathparser = urlparse(FileUrl)
-        TargetFilename = os.path.basename(pathparser.path)
-        FullFilePath = os.path.join(GDINO_PATH, TargetFilename)
-        if os.path.isfile(FullFilePath) == False:
-            ModelDownload = utility.downloader(FileUrl, FullFilePath)
+    # if os.path.exists(SEGM_PATH) == False:
+    #     Path(SEGM_PATH).mkdir(parents=True, exist_ok=True)
+    # for SEGM_KEY in SEGM:
+    #     FileUrl = SEGM[SEGM_KEY]
+    #     pathparser = urlparse(FileUrl)
+    #     TargetFilename = os.path.basename(pathparser.path)
+    #     FullFilePath = os.path.join(SEGM_PATH, TargetFilename)
+    #     if os.path.isfile(FullFilePath) == False:
+    #         ModelDownload = utility.downloader(FileUrl, FullFilePath)
 
-    if os.path.exists(SAMS_PATH) == False:
-        Path(SAMS_PATH).mkdir(parents=True, exist_ok=True)
-    for SAMS_KEY in SAMS:
-        FileUrl = SAMS[SAMS_KEY]
-        pathparser = urlparse(FileUrl)
-        TargetFilename = os.path.basename(pathparser.path)
-        FullFilePath = os.path.join(SAMS_PATH, TargetFilename)
-        if os.path.isfile(FullFilePath) == False:
-            ModelDownload = utility.downloader(FileUrl, FullFilePath)
+    # if os.path.exists(GDINO_PATH) == False:
+    #     Path(GDINO_PATH).mkdir(parents=True, exist_ok=True)
+    # for GDINO_KEY in GDINO:
+    #     FileUrl = GDINO[GDINO_KEY]
+    #     pathparser = urlparse(FileUrl)
+    #     TargetFilename = os.path.basename(pathparser.path)
+    #     FullFilePath = os.path.join(GDINO_PATH, TargetFilename)
+    #     if os.path.isfile(FullFilePath) == False:
+    #         ModelDownload = utility.downloader(FileUrl, FullFilePath)
 
-    BBOX_DIR = os.path.join(folder_paths.models_dir, 'ultralytics', 'bbox')
-    SEGM_DIR = os.path.join(folder_paths.models_dir, 'ultralytics', 'segm')
-    UL_DIR = os.path.join(folder_paths.models_dir, 'ultralytics')
+    # if os.path.exists(SAMS_PATH) == False:
+    #     Path(SAMS_PATH).mkdir(parents=True, exist_ok=True)
+    # for SAMS_KEY in SAMS:
+    #     FileUrl = SAMS[SAMS_KEY]
+    #     pathparser = urlparse(FileUrl)
+    #     TargetFilename = os.path.basename(pathparser.path)
+    #     FullFilePath = os.path.join(SAMS_PATH, TargetFilename)
+    #     if os.path.isfile(FullFilePath) == False:
+    #         ModelDownload = utility.downloader(FileUrl, FullFilePath)
 
-    folder_paths.add_model_folder_path("ultralytics_bbox", BBOX_DIR)
-    folder_paths.add_model_folder_path("ultralytics_segm", SEGM_DIR)
-    folder_paths.add_model_folder_path("ultralytics", UL_DIR)
+    # BBOX_DIR = os.path.join(folder_paths.models_dir, 'ultralytics', 'bbox')
+    # SEGM_DIR = os.path.join(folder_paths.models_dir, 'ultralytics', 'segm')
+    # UL_DIR = os.path.join(folder_paths.models_dir, 'ultralytics')
 
-    BBOX_LIST_ALL = folder_paths.get_filename_list("ultralytics_bbox")
-    SEGM_LIST_ALL = folder_paths.get_filename_list("ultralytics_segm")
+    # folder_paths.add_model_folder_path("ultralytics_bbox", BBOX_DIR)
+    # folder_paths.add_model_folder_path("ultralytics_segm", SEGM_DIR)
+    # folder_paths.add_model_folder_path("ultralytics", UL_DIR)
 
-    BBOX_LIST = folder_paths.filter_files_extensions(BBOX_LIST_ALL, ['.pt'])
-    SEGM_LIST = folder_paths.filter_files_extensions(SEGM_LIST_ALL, ['.pt'])
+    # BBOX_LIST_ALL = folder_paths.get_filename_list("ultralytics_bbox")
+    # SEGM_LIST_ALL = folder_paths.get_filename_list("ultralytics_segm")
 
-    DINO_DIR = os.path.join(folder_paths.models_dir, 'grounding-dino')
-    folder_paths.add_model_folder_path("grounding-dino", DINO_DIR)
-    DINO_LIST_ALL = folder_paths.get_filename_list("grounding-dino")
-    DINO_LIST = folder_paths.filter_files_extensions(DINO_LIST_ALL, ['.pth'])
-    DINO_CONFIG_LIST = folder_paths.filter_files_extensions(DINO_LIST_ALL, ['.cfg.py'])
+    # BBOX_LIST = folder_paths.filter_files_extensions(BBOX_LIST_ALL, ['.pt'])
+    # SEGM_LIST = folder_paths.filter_files_extensions(SEGM_LIST_ALL, ['.pt'])
+
+    # DINO_DIR = os.path.join(folder_paths.models_dir, 'grounding-dino')
+    # folder_paths.add_model_folder_path("grounding-dino", DINO_DIR)
+    # DINO_LIST_ALL = folder_paths.get_filename_list("grounding-dino")
+    # DINO_LIST = folder_paths.filter_files_extensions(DINO_LIST_ALL, ['.pth'])
+    # DINO_CONFIG_LIST = folder_paths.filter_files_extensions(DINO_LIST_ALL, ['.cfg.py'])
 
     @classmethod
     def INPUT_TYPES(cls):
-        bboxs = ["bbox/"+x for x in cls.BBOX_LIST]
-        segms = ["segm/"+x for x in cls.SEGM_LIST]
-        dinos = ["dino/"+x for x in cls.DINO_LIST]
-        sams = list(filter(lambda x: x.startswith('sam_vit'), cls.SAMS_LIST))
+        # bboxs = ["bbox/"+x for x in cls.BBOX_LIST]
+        # segms = ["segm/"+x for x in cls.SEGM_LIST]
+        # dinos = ["dino/"+x for x in cls.DINO_LIST]
+        # sams = list(filter(lambda x: x.startswith('sam_vit'), cls.SAMS_LIST))
 
         return {
             "required": {
@@ -146,8 +151,10 @@ class PrimereImageSegments:
                 "trigger_high_off": ("FLOAT", {"default": 0, "min": 0, "max": 100, "step": 0.05}),
                 "trigger_low_off": ("FLOAT", {"default": 0, "min": 0, "max": 100, "step": 0.05}),
 
-                "bbox_segm_model_name": (bboxs + segms,),
-                "sam_model_name": (sams,),
+                # "bbox_segm_model_name": (bboxs + segms,),
+                "bbox_segm_model_name": (get_field_pre_values("PrimereImageSegments","bbox_segm_model_name"),),
+                # "sam_model_name": (sams,),
+                "sam_model_name": (get_field_pre_values("PrimereImageSegments","sam_model_name"),),
                 "sam_device_mode": (["AUTO", "Prefer GPU", "CPU"],),
 
                 "search_yolov8s": (['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat', 'traffic light', 'fire hydrant', 'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe', 'backpack', 'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball', 'kite', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard', 'tennis racket', 'bottle', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple', 'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake', 'chair', 'couch', 'potted plant', 'bed', 'dining table', 'toilet', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone', 'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush'],),
@@ -220,9 +227,11 @@ class PrimereImageSegments:
         model = detectors.load_yolo(model_path)
 
         sam_modelname = folder_paths.get_full_path("sams", sam_model_name)
-        if 'vit_h' in sam_modelname:
+        #liblib_adapter
+        _key_sam_modelname = get_field_key_by_value(ComfyUI_Primere_Nodes_Segment_Sam_Mapping,sam_modelname)
+        if 'vit_h' in _key_sam_modelname:
             model_kind = 'vit_h'
-        elif 'vit_l' in sam_modelname:
+        elif 'vit_l' in _key_sam_modelname:
             model_kind = 'vit_l'
         else:
             model_kind = 'vit_b'
@@ -233,9 +242,10 @@ class PrimereImageSegments:
             sam.to(device = device)
 
         sam.is_auto_mode = sam_device_mode == "AUTO"
-
-        if bbox_segm_model_name.startswith("bbox") or bbox_segm_model_name.startswith("segm"):
-            if bbox_segm_model_name.startswith("bbox"):
+        #liblib_adapter
+        _key_bbox_segm_model_name = get_field_key_by_value(ComfyUI_Primere_Nodes_Segment_Bbox_Segm_Mapping,bbox_segm_model_name)
+        if _key_bbox_segm_model_name.startswith("bbox") or _key_bbox_segm_model_name.startswith("segm"):
+            if _key_bbox_segm_model_name.startswith("bbox"):
                 # DETECTOR_RESULT = detectors.NO_SEGM_DETECTOR()
                 DETECTOR_RESULT = detectors.UltraBBoxDetector(model)
             else:
@@ -243,21 +253,21 @@ class PrimereImageSegments:
 
             bbox_segs = DETECTOR_RESULT.detect(image, threshold, dilation, crop_factor, drop_size)
             segs = bbox_segs
-            if bbox_segm_model_name.startswith("segm"):
+            if _key_bbox_segm_model_name.startswith("segm"):
                 segs = DETECTOR_RESULT.detect(image, threshold, dilation, crop_factor, drop_size)
 
-        if bbox_segm_model_name.startswith("dino"):
+        if _key_bbox_segm_model_name.startswith("dino"):
             print('DINO')
             # dino_model = load_groundingdino_model(model_name)
             return image, [image], None, None, empty_segs, [], 0, segment_settings
 
-        if 'yolov8s.pt' in bbox_segm_model_name:
+        if 'yolov8s.pt' in _key_bbox_segm_model_name:
             segs = detectors.filter_segs_by_label(segs, search_yolov8s)
 
-        if 'deepfashion2_yolov8' in bbox_segm_model_name:
+        if 'deepfashion2_yolov8' in _key_bbox_segm_model_name:
             segs = detectors.filter_segs_by_label(segs, search_deepfashion2_yolov8s)
 
-        if 'facial_features_yolo8x' in bbox_segm_model_name:
+        if 'facial_features_yolo8x' in _key_bbox_segm_model_name:
             segs = detectors.filter_segs_by_label(segs, search_facial_features_yolo8x)
 
         if (trigger_high_off > 0) or (trigger_low_off > 0):

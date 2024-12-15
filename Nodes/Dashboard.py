@@ -49,6 +49,9 @@ import difflib
 import datetime
 from ..Nodes.Inputs import PrimereEmbeddingHandler
 
+from configs.config import get_juicefs_full_path_safemode
+from configs.node_fields import get_field_pre_values, CLIP_MAPPINGS,LONG_CLIP_MAPPINGS,VAE_MAPPINGS,ComfyUI_Primere_Nodes_Lora_Mapping
+
 class PrimereSamplersSteps:
     CATEGORY = TREE_DASHBOARD
     RETURN_TYPES = (comfy.samplers.KSampler.SAMPLERS, comfy.samplers.KSampler.SCHEDULERS, "INT", "FLOAT")
@@ -81,7 +84,9 @@ class PrimereVAE:
     def INPUT_TYPES(s):
         return {
             "required": {
-                "vae_model": (folder_paths.get_filename_list("vae"),)
+                #liblib adapter
+                # "vae_model": (folder_paths.get_filename_list("vae"),)
+                "vae_model": (get_field_pre_values("PrimereVAE", "vae_model"),)
             },
         }
 
@@ -89,6 +94,7 @@ class PrimereVAE:
         return vae_model,
 
 class PrimereCKPT:
+    #TODO liblib adapter 这里的返回类型第三个被限定为checkpoints 这个动态变化的，需要关注哪里有用到
     RETURN_TYPES = ("CHECKPOINT_NAME", "STRING", ['None'] + folder_paths.get_filename_list("checkpoints"),)
     RETURN_NAMES = ("MODEL_NAME", "MODEL_VERSION", "MODEL")
     FUNCTION = "load_ckpt_list"
@@ -126,7 +132,9 @@ class PrimereVAELoader:
             return (baked_vae,)
 
         if (vae_name == 'External VAE'):
-            vae_name = folder_paths.get_filename_list("vae")[0]
+            #liblib adapter
+            # vae_name = folder_paths.get_filename_list("vae")[0] 默认使用第一个，很大概率会出错
+            vae_name =get_juicefs_full_path_safemode(VAE_MAPPINGS, VAE_MAPPINGS.keys()[0])
 
         return nodes.VAELoader.load_vae(self, vae_name)
 
@@ -196,10 +204,11 @@ class PrimereModelConceptSelector:
             "default_cfg_scale": ("FLOAT", {"default": 7, "min": 0.1, "max": 100, "step": 0.01}),
             "default_steps": ("INT", {"default": 12, "min": 1, "max": 1000, "step": 1}),
             "override_steps": ("BOOLEAN", {"default": False, "label_off": "Set by sampler settings", "label_on": "Set by model filename"}),
-
-            "sd_vae": (["None"] + VAELIST,),
-            "sdxl_vae": (["None"] + VAELIST,),
-
+            # liblib adapter
+            # "sd_vae": (["None"] + VAELIST,),
+            "sd_vae": (["None"] + get_field_pre_values("PrimereModelConceptSelector", "sd_vae"),),
+            # "sdxl_vae": (["None"] + VAELIST,),
+            "sdxl_vae": (["None"] + get_field_pre_values("PrimereModelConceptSelector", "sdxl_vae"),),
             "model_concept": (["Auto"] + CONCEPT_LIST, {"default": "Auto"}),
             "clip_selection": ("BOOLEAN", {"default": True, "label_on": "Use baked if exist", "label_off": "Always use custom"}),
             "vae_selection": ("BOOLEAN", {"default": True, "label_on": "Use baked if exist", "label_off": "Always use custom"}),
@@ -216,22 +225,29 @@ class PrimereModelConceptSelector:
             "hypersd_sampler": ("BOOLEAN", {"default": False, "label_on": "Set by model", "label_off": "Custom (external)"}),
             "strength_hypersd_lora_model": ("FLOAT", {"default": 1.000, "min": -20.000, "max": 20.000, "step": 0.001}),
 
-            "cascade_stage_a": (["None"] + VAELIST,),
+            # "cascade_stage_a": (["None"] + VAELIST,),
+            "cascade_stage_a": (["None"] + get_field_pre_values("PrimereModelConceptSelector", "cascade_stage_a"),),
             "cascade_stage_b": (["None"] + UNETLIST,),
             "cascade_stage_c": (["None"] + UNETLIST,),
-            "cascade_clip": (["None"] + CLIPLIST,),
+            # "cascade_clip": (["None"] + CLIPLIST,),
+            "cascade_clip": (["None"] + get_field_pre_values("PrimereModelConceptSelector", "cascade_clip"),),
 
             # "playground_sigma_max": ("FLOAT", {"default": 120.0, "min": 0.0, "max": 1000.0, "step": 0.001, "round": False}),
             # "playground_sigma_min": ("FLOAT", {"default": 0.002, "min": 0.0, "max": 1000.0, "step": 0.001, "round": False}),
 
             "flux_selector": (["DIFFUSION", "GGUF", "SAFETENSOR"], {"default": "DIFFUSION"}),
-            "flux_diffusion": (["None"] + DIFFUSIONLIST,),
+            # "flux_diffusion": (["None"] + DIFFUSIONLIST,),
+            "flux_diffusion": (["None"] + get_field_pre_values("PrimereModelConceptSelector", "flux_diffusion"),),
             "flux_weight_dtype": (["default", "fp8_e4m3fn", "fp8_e5m2"],),
-            "flux_gguf": (["None"] + GGUFLIST,),
-            "flux_clip_t5xxl": (["None"] + CLIPLIST,),
-            "flux_clip_l": (["None"] + CLIPLIST,),
+            # "flux_gguf": (["None"] + GGUFLIST,),
+            "flux_gguf": (["None"] + get_field_pre_values("PrimereModelConceptSelector", "flux_gguf"),),
+            # "flux_clip_t5xxl": (["None"] + CLIPLIST,),
+            "flux_clip_t5xxl": (["None"] + get_field_pre_values("PrimereModelConceptSelector", "flux_clip_t5xxl"),),
+            # "flux_clip_l": (["None"] + CLIPLIST,),
+            "flux_clip_l": (["None"] + get_field_pre_values("PrimereModelConceptSelector", "flux_clip_l"),),
             "flux_clip_guidance": ('FLOAT', {"default": 3.5, "min": 0.0, "max": 100.0, "step": 0.1}),
-            "flux_vae": (["None"] + VAELIST,),
+            # "flux_vae": (["None"] + VAELIST,),
+            "flux_vae": (["None"] + get_field_pre_values("PrimereModelConceptSelector", "flux_vae"),),
             "flux_sampler": (["custom_advanced", "ksampler"], {"default": "ksampler"}),
             "use_flux_hyper_lora": ("BOOLEAN", {"default": False, "label_on": "Use hyper Lora", "label_off": "Ignore hyper Lora"}),
             "flux_hyper_lora_type": (["FLUX.1-dev", "FLUX.1-dev-fp16"], {"default": "FLUX.1-dev"}),
@@ -242,14 +258,21 @@ class PrimereModelConceptSelector:
             "flux_turbo_lora_step": ([4, 6, 8, 10, 12], {"default": 8}),
             "flux_turbo_lora_strength": ("FLOAT", {"default": 1, "min": -20.000, "max": 20.000, "step": 0.001}),
 
-            "hunyuan_clip_t5xxl": (["None"] + CLIPLIST,),
-            "hunyuan_clip_l": (["None"] + CLIPLIST,),
-            "hunyuan_vae": (["None"] + VAELIST,),
+            # "hunyuan_clip_t5xxl": (["None"] + CLIPLIST,),
+            "hunyuan_clip_t5xxl": (["None"] + get_field_pre_values("PrimereModelConceptSelector", "hunyuan_clip_t5xxl"),),
+            # "hunyuan_clip_l": (["None"] + CLIPLIST,),
+            "hunyuan_clip_l": (["None"] + get_field_pre_values("PrimereModelConceptSelector", "hunyuan_clip_l"),),
+            # "hunyuan_vae": (["None"] + VAELIST,),
+            "hunyuan_vae": (["None"] + get_field_pre_values("PrimereModelConceptSelector", "hunyuan_vae"),),
 
-            "sd3_clip_g": (["None"] + CLIPLIST,),
-            "sd3_clip_l": (["None"] + CLIPLIST,),
-            "sd3_clip_t5xxl": (["None"] + CLIPLIST,),
-            "sd3_unet_vae": (["None"] + VAELIST,),
+            # "sd3_clip_g": (["None"] + CLIPLIST,),
+            "sd3_clip_g": (["None"] + get_field_pre_values("PrimereModelConceptSelector", "sd3_clip_g"),),
+            # "sd3_clip_l": (["None"] + CLIPLIST,),
+            "sd3_clip_l": (["None"] + get_field_pre_values("PrimereModelConceptSelector", "sd3_clip_l"),),
+            # "sd3_clip_t5xxl": (["None"] + CLIPLIST,),
+            "sd3_clip_t5xxl": (["None"] + get_field_pre_values("PrimereModelConceptSelector", "sd3_clip_t5xxl"),),
+            # "sd3_unet_vae": (["None"] + VAELIST,),
+            "sd3_unet_vae": (["None"] + get_field_pre_values("PrimereModelConceptSelector", "sd3_unet_vae"),),
             "use_sd3_hyper_lora": ("BOOLEAN", {"default": False, "label_on": "Use hyper Lora", "label_off": "Ignore Lora"}),
             "sd3_hyper_lora_step": ([4, 8, 16], {"default": 8}),
             "sd3_hyper_lora_strength": ("FLOAT", {"default": 0.125, "min": -20.000, "max": 20.000, "step": 0.001}),
@@ -257,8 +280,10 @@ class PrimereModelConceptSelector:
             "kolors_precision": (['fp16', 'quant8', 'quant4'], {"default": "quant8"}),
 
             "pixart_model_type": (["Auto"] + list(pixart_conf.keys()), {"default": "Auto"}),
-            "pixart_T5_encoder": (["None"] + CLIPLIST,),
-            "pixart_vae": (["None"] + VAELIST,),
+            # "pixart_T5_encoder": (["None"] + CLIPLIST,),
+            "pixart_T5_encoder": (["None"] + get_field_pre_values("PrimereModelConceptSelector", "pixart_T5_encoder"),),
+            # "pixart_vae": (["None"] + VAELIST,),
+            "pixart_vae": (["None"] + get_field_pre_values("PrimereModelConceptSelector", "pixart_vae"),),
             "pixart_denoise": ("FLOAT", {"default": 0.9, "min": 0.0, "max": 1.0, "step": 0.01}),
             "pixart_refiner_model": (["None"] + MODELLIST,),
             "pixart_refiner_sampler": (comfy.samplers.KSampler.SAMPLERS, {"default": "dpmpp_2m"}),
@@ -827,7 +852,9 @@ class PrimereCKPTLoader:
                 # offload_device = model_management.unet_offload_device()
                 dtype = {"bf16": torch.bfloat16, "fp16": torch.float16, "fp32": torch.float32}['fp16']
                 pbar = comfy.utils.ProgressBar(4)
-                model_path = os.path.join(folder_paths.models_dir, "diffusers", model_name)
+                #liblib adapter FIXME 注意，这里的实际上加载的是以目录形式存在没有进行聚合的diffusers库，lib模型选择上这里应该无法支持到
+                # model_path = os.path.join(folder_paths.models_dir, "diffusers", model_name)
+                model_path = ckpt_name
                 pbar.update(1)
                 scheduler = EulerDiscreteScheduler.from_pretrained(model_path, subfolder='scheduler')
                 unet = UNet2DConditionModel.from_pretrained(model_path, subfolder='unet', variant="fp16", revision=None, low_cpu_mem_usage=True).to(dtype).eval()
@@ -858,9 +885,11 @@ class PrimereCKPTLoader:
                     print('1')
                     OUTPUT_VAE = nodes.VAELoader.load_vae(self, vae_name)[0]
                 else:
-                    vae_list = folder_paths.get_filename_list("vae")
-                    allLSDXLvae = list(filter(lambda a: 'sdxl_'.casefold() in a.casefold(), vae_list))
-                    OUTPUT_VAE = nodes.VAELoader.load_vae(self, allLSDXLvae[0])[0]
+                    # liblib adapter
+                    # vae_list = folder_paths.get_filename_list("vae")
+                    # allLSDXLvae = list(filter(lambda a: 'sdxl_'.casefold() in a.casefold(), vae_list))
+                    # OUTPUT_VAE = nodes.VAELoader.load_vae(self, allLSDXLvae[0])[0]
+                    OUTPUT_VAE = nodes.VAELoader.load_vae(self, get_juicefs_full_path_safemode(VAE_MAPPINGS, "sd_xl_vae_1.0"))[0]
 
                 return (KOLORS_MODEL,) + (CHATGLM3_MODEL,) + (OUTPUT_VAE,) + (MODEL_VERSION,)
 
@@ -874,10 +903,12 @@ class PrimereCKPTLoader:
                         if is_link == False:
                             MODEL_C_CAS = nodes.UNETLoader.load_unet(self, ckpt_name, 'default')[0]
                         else:
-                            File_link = Path(str(fullpathFile)).resolve()
-                            linkName_U = str(folder_paths.folder_names_and_paths["diffusion_models"][0][0])
-                            linkName_D = str(folder_paths.folder_names_and_paths["diffusion_models"][0][1])
-                            linkedFileName = str(File_link).replace(linkName_U + '\\', '').replace(linkName_D + '\\', '')
+                            #liblib adapter
+                            # File_link = Path(str(fullpathFile)).resolve()
+                            # linkName_U = str(folder_paths.folder_names_and_paths["diffusion_models"][0][0])
+                            # linkName_D = str(folder_paths.folder_names_and_paths["diffusion_models"][0][1])
+                            # linkedFileName = str(File_link).replace(linkName_U + '\\', '').replace(linkName_D + '\\', '')          
+                            linkedFileName=ckpt_name
                             MODEL_C_CAS = nodes.UNETLoader.load_unet(self, linkedFileName, 'default')[0]
                     else:
                         MODEL_C_CAS = nodes.UNETLoader.load_unet(self, cascade_stage_c, 'default')[0]
@@ -893,9 +924,12 @@ class PrimereCKPTLoader:
                     File_link = Path(str(fullpathFile)).resolve()
                     model_ext = os.path.splitext(File_link)[1].lower()
                     if model_ext == '.gguf':
-                        linkName_U = str(folder_paths.folder_names_and_paths["diffusion_models"][0][0])
-                        linkName_D = str(folder_paths.folder_names_and_paths["diffusion_models"][0][1])
-                        sd3_gguf = str(File_link).replace(linkName_U + '\\', '').replace(linkName_D + '\\', '')
+                        #liblib adapter
+                        # linkName_U = str(folder_paths.folder_names_and_paths["diffusion_models"][0][0])
+                        # linkName_D = str(folder_paths.folder_names_and_paths["diffusion_models"][0][1])
+                        # sd3_gguf = str(File_link).replace(linkName_U + '\\', '').replace(linkName_D + '\\', '')
+                        sd3_gguf = ckpt_name
+
 
             case 'Flux':
                 if flux_selector is not None and flux_diffusion is not None and flux_weight_dtype is not None and flux_gguf is not None and flux_clip_t5xxl is not None and flux_clip_l is not None and flux_clip_guidance is not None and flux_vae is not None:
@@ -909,9 +943,11 @@ class PrimereCKPTLoader:
                             match model_ext:
                                 case '.gguf':
                                     flux_selector = 'GGUF'
-                                    linkName_U = str(folder_paths.folder_names_and_paths["diffusion_models"][0][0])
-                                    linkName_D = str(folder_paths.folder_names_and_paths["diffusion_models"][0][1])
-                                    flux_gguf = str(File_link).replace(linkName_U + '\\', '').replace(linkName_D + '\\', '')
+                                    #liblib adapter
+                                    # linkName_U = str(folder_paths.folder_names_and_paths["diffusion_models"][0][0])
+                                    # linkName_D = str(folder_paths.folder_names_and_paths["diffusion_models"][0][1])
+                                    # flux_gguf = str(File_link).replace(linkName_U + '\\', '').replace(linkName_D + '\\', '')
+                                    flux_gguf = ckpt_name
 
                     match flux_selector:
                         case 'DIFFUSION':
@@ -933,9 +969,11 @@ class PrimereCKPTLoader:
                                 DUAL_CLIP = nodes.DualCLIPLoader.load_clip(self, flux_clip_t5xxl, flux_clip_l, 'flux')[0]
                                 FLUX_VAE = nodes.VAELoader.load_vae(self, flux_vae)[0]
                             else:
-                                linkName_U = str(folder_paths.folder_names_and_paths["diffusion_models"][0][0])
-                                linkName_D = str(folder_paths.folder_names_and_paths["diffusion_models"][0][1])
-                                linkedFileName = str(File_link).replace(linkName_U + '\\', '').replace(linkName_D + '\\', '')
+                                #liblib adapter
+                                # linkName_U = str(folder_paths.folder_names_and_paths["diffusion_models"][0][0])
+                                # linkName_D = str(folder_paths.folder_names_and_paths["diffusion_models"][0][1])
+                                # linkedFileName = str(File_link).replace(linkName_U + '\\', '').replace(linkName_D + '\\', '')
+                                linkedFileName=ckpt_name
                                 if 'diffusion_models' in str(File_link):
                                     model_ext = os.path.splitext(linkedFileName)[1].lower()
                                     if model_ext == '.gguf':
@@ -958,28 +996,37 @@ class PrimereCKPTLoader:
                                     FLUX_VAE = nodes.VAELoader.load_vae(self, flux_vae)[0]
 
                     if use_flux_hyper_lora == True:
-                        FLUX_DEV_LORA8 = 'https://huggingface.co/ByteDance/Hyper-SD/resolve/main/Hyper-FLUX.1-dev-8steps-lora.safetensors?download=true'
-                        FLUX_DEV_FP16_LORA8 = 'https://huggingface.co/nakodanei/Hyper-FLUX.1-dev-8steps-lora-fp16/resolve/main/Hyper-FLUX.1-dev-8steps-lora-fp16.safetensors?download=true'
-                        FLUX_DEV_LORA16 = 'https://huggingface.co/ByteDance/Hyper-SD/resolve/main/Hyper-FLUX.1-dev-16steps-lora.safetensors?download=true'
+                        #liblib adapter 禁用下载
+                        # FLUX_DEV_LORA8 = 'https://huggingface.co/ByteDance/Hyper-SD/resolve/main/Hyper-FLUX.1-dev-8steps-lora.safetensors?download=true'
+                        # FLUX_DEV_FP16_LORA8 = 'https://huggingface.co/nakodanei/Hyper-FLUX.1-dev-8steps-lora-fp16/resolve/main/Hyper-FLUX.1-dev-8steps-lora-fp16.safetensors?download=true'
+                        # FLUX_DEV_LORA16 = 'https://huggingface.co/ByteDance/Hyper-SD/resolve/main/Hyper-FLUX.1-dev-16steps-lora.safetensors?download=true'
 
-                        DOWNLOADED_FLUX_DEV_LORA8 = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', 'Hyper-FLUX.1-dev-8steps-lora-fp16.safetensors')
-                        DOWNLOADED_FLUX_DEV_FP16_LORA8 = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', 'Hyper-FLUX.1-dev-8steps-lora.safetensors')
-                        DOWNLOADED_FLUX_DEV_LORA16 = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', 'Hyper-FLUX.1-dev-16steps-lora.safetensors')
+                        # DOWNLOADED_FLUX_DEV_LORA8 = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', 'Hyper-FLUX.1-dev-8steps-lora-fp16.safetensors')
+                        # DOWNLOADED_FLUX_DEV_FP16_LORA8 = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', 'Hyper-FLUX.1-dev-8steps-lora.safetensors')
+                        # DOWNLOADED_FLUX_DEV_LORA16 = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', 'Hyper-FLUX.1-dev-16steps-lora.safetensors')
 
-                        utility.fileDownloader(DOWNLOADED_FLUX_DEV_LORA8, FLUX_DEV_LORA8)
-                        utility.fileDownloader(DOWNLOADED_FLUX_DEV_FP16_LORA8, FLUX_DEV_FP16_LORA8)
-                        utility.fileDownloader(DOWNLOADED_FLUX_DEV_LORA16, FLUX_DEV_LORA16)
+                        # utility.fileDownloader(DOWNLOADED_FLUX_DEV_LORA8, FLUX_DEV_LORA8)
+                        # utility.fileDownloader(DOWNLOADED_FLUX_DEV_FP16_LORA8, FLUX_DEV_FP16_LORA8)
+                        # utility.fileDownloader(DOWNLOADED_FLUX_DEV_LORA16, FLUX_DEV_LORA16)
 
-                        downloaded_filelist_filtered = utility.getDownloadedFiles()
-                        allHyperFluxLoras = list(filter(lambda a: 'hyper-flux'.casefold() in a.casefold(), downloaded_filelist_filtered))
-                        finalLoras = list(filter(lambda a: str(flux_hyper_lora_step) + 'step'.casefold() in a.casefold() and '-fp16'.casefold() not in a.casefold(), allHyperFluxLoras))
-                        if flux_hyper_lora_type == 'FLUX.1-dev-fp16':
-                            finalLoras_pre = list(filter(lambda a: str(flux_hyper_lora_step) + 'step'.casefold() in a.casefold() and '-fp16'.casefold() in a.casefold(), allHyperFluxLoras))
-                            if len(finalLoras_pre) > 0:
-                                finalLoras = finalLoras_pre
+                        # downloaded_filelist_filtered = utility.getDownloadedFiles()
+                        # allHyperFluxLoras = list(filter(lambda a: 'hyper-flux'.casefold() in a.casefold(), downloaded_filelist_filtered))
+                        # finalLoras = list(filter(lambda a: str(flux_hyper_lora_step) + 'step'.casefold() in a.casefold() and '-fp16'.casefold() not in a.casefold(), allHyperFluxLoras))
+                        # if flux_hyper_lora_type == 'FLUX.1-dev-fp16':
+                        #     finalLoras_pre = list(filter(lambda a: str(flux_hyper_lora_step) + 'step'.casefold() in a.casefold() and '-fp16'.casefold() in a.casefold(), allHyperFluxLoras))
+                        #     if len(finalLoras_pre) > 0:
+                        #         finalLoras = finalLoras_pre
 
-                        LORA_FILE = finalLoras[0]
-                        FULL_LORA_PATH = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', LORA_FILE)
+                        # LORA_FILE = finalLoras[0]
+                        # FULL_LORA_PATH = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', LORA_FILE)
+                        FULL_LORA_PATH = None
+                        if str(flux_hyper_lora_step)=='8':
+                            if flux_hyper_lora_type == 'FLUX.1-dev-fp16':
+                                FULL_LORA_PATH = get_juicefs_full_path_safemode(ComfyUI_Primere_Nodes_Lora_Mapping, 'Hyper-FLUX.1-dev-8steps-lora-fp16.safetensors')
+                            else:
+                                FULL_LORA_PATH = get_juicefs_full_path_safemode(ComfyUI_Primere_Nodes_Lora_Mapping, 'Hyper-FLUX.1-dev-8steps-lora.safetensors')
+                        elif str(flux_hyper_lora_step)=='16':
+                            FULL_LORA_PATH = get_juicefs_full_path_safemode(ComfyUI_Primere_Nodes_Lora_Mapping, 'Hyper-FLUX.1-dev-16steps-lora.safetensors')
 
                         if FULL_LORA_PATH is not None and os.path.exists(FULL_LORA_PATH) == True:
                             if flux_hyper_lora_strength != 0:
@@ -999,30 +1046,40 @@ class PrimereCKPTLoader:
                                 MODEL_DIFFUSION = comfy.sd.load_lora_for_models(MODEL_DIFFUSION, None, lora, flux_hyper_lora_strength, 0)[0]
 
                     if use_flux_turbo_lora == True:
-                        FLUX_TURBO_LORA8 = 'https://huggingface.co/alimama-creative/FLUX.1-Turbo-Alpha/resolve/main/diffusion_pytorch_model.safetensors?download=true'
-                        FLUX_TURBORENDER_LORA = 'https://huggingface.co/DarkMoonDragon/TurboRender-flux-dev/resolve/main/pytorch_lora_weights.safetensors?download=true'
+                        #liblib adapter 禁用下载
+                        # FLUX_TURBO_LORA8 = 'https://huggingface.co/alimama-creative/FLUX.1-Turbo-Alpha/resolve/main/diffusion_pytorch_model.safetensors?download=true'
+                        # FLUX_TURBORENDER_LORA = 'https://huggingface.co/DarkMoonDragon/TurboRender-flux-dev/resolve/main/pytorch_lora_weights.safetensors?download=true'
 
-                        DOWNLOADED_FLUX_TURBO_LORA8 = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', 'Turbo-FLUX.1-dev-8steps-lora.safetensors')
-                        DOWNLOADED_FLUX_TURBORENDER_LORA = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', 'Turbo-FLUX.1-dev-turborender-lora.safetensors')
+                        # DOWNLOADED_FLUX_TURBO_LORA8 = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', 'Turbo-FLUX.1-dev-8steps-lora.safetensors')
+                        # DOWNLOADED_FLUX_TURBORENDER_LORA = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', 'Turbo-FLUX.1-dev-turborender-lora.safetensors')
 
-                        utility.fileDownloader(DOWNLOADED_FLUX_TURBO_LORA8, FLUX_TURBO_LORA8)
-                        utility.fileDownloader(DOWNLOADED_FLUX_TURBORENDER_LORA, FLUX_TURBORENDER_LORA)
+                        # utility.fileDownloader(DOWNLOADED_FLUX_TURBO_LORA8, FLUX_TURBO_LORA8)
+                        # utility.fileDownloader(DOWNLOADED_FLUX_TURBORENDER_LORA, FLUX_TURBORENDER_LORA)
 
-                        downloaded_filelist_filtered = utility.getDownloadedFiles()
-                        allTurboTFluxLoras = list(filter(lambda a: 'turbo-flux'.casefold() in a.casefold(), downloaded_filelist_filtered))
+                        # downloaded_filelist_filtered = utility.getDownloadedFiles()
+                        # allTurboTFluxLoras = list(filter(lambda a: 'turbo-flux'.casefold() in a.casefold(), downloaded_filelist_filtered))
+                        # LORA_FILE = None
+                        # if flux_turbo_lora_type == 'TurboAlpha' and 'Turbo-FLUX.1-dev-8steps-lora.safetensors' in allTurboTFluxLoras:
+                        #     LORA_FILE = 'Turbo-FLUX.1-dev-8steps-lora.safetensors'
+                        # elif flux_turbo_lora_type == 'TurboRender' and 'Turbo-FLUX.1-dev-turborender-lora.safetensors' in allTurboTFluxLoras:
+                        #     LORA_FILE = 'Turbo-FLUX.1-dev-turborender-lora.safetensors'
+                        # else:
+                        #     finalTLoras_pre = list(filter(lambda a: str(flux_turbo_lora_step) + 'step'.casefold() in a.casefold(), allTurboTFluxLoras))
+                        #     if len(finalTLoras_pre) > 0:
+                        #         finalTLoras = finalTLoras_pre
+                        #         LORA_FILE = finalTLoras[0]
                         LORA_FILE = None
-                        if flux_turbo_lora_type == 'TurboAlpha' and 'Turbo-FLUX.1-dev-8steps-lora.safetensors' in allTurboTFluxLoras:
+                        FULL_LORA_PATH = None
+                        if flux_turbo_lora_type == 'TurboAlpha':
                             LORA_FILE = 'Turbo-FLUX.1-dev-8steps-lora.safetensors'
-                        elif flux_turbo_lora_type == 'TurboRender' and 'Turbo-FLUX.1-dev-turborender-lora.safetensors' in allTurboTFluxLoras:
+                        elif flux_turbo_lora_type == 'TurboRender':
                             LORA_FILE = 'Turbo-FLUX.1-dev-turborender-lora.safetensors'
-                        else:
-                            finalTLoras_pre = list(filter(lambda a: str(flux_turbo_lora_step) + 'step'.casefold() in a.casefold(), allTurboTFluxLoras))
-                            if len(finalTLoras_pre) > 0:
-                                finalTLoras = finalTLoras_pre
-                                LORA_FILE = finalTLoras[0]
-
+                        
                         if LORA_FILE is not None:
-                            FULL_LORA_PATH = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', LORA_FILE)
+                            FULL_LORA_PATH = get_juicefs_full_path_safemode(ComfyUI_Primere_Nodes_Lora_Mapping, LORA_FILE)
+                        if LORA_FILE is not None:
+                            #liblib adapter
+                            # FULL_LORA_PATH = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', LORA_FILE)
                             if FULL_LORA_PATH is not None and os.path.exists(FULL_LORA_PATH) == True:
                                 if flux_turbo_lora_strength != 0:
                                     lora = None
@@ -1084,10 +1141,12 @@ class PrimereCKPTLoader:
                         except Exception:
                             LOADED_CHECKPOINT = nodes.UNETLoader.load_unet(self, ckpt_name, 'default')
                     else:
-                        File_link = Path(str(fullpathFile)).resolve()
-                        linkName_U = str(folder_paths.folder_names_and_paths["diffusion_models"][0][0])
-                        linkName_D = str(folder_paths.folder_names_and_paths["diffusion_models"][0][1])
-                        linkedFileName = str(File_link).replace(linkName_U + '\\', '').replace(linkName_D + '\\', '')
+                        #liblib adapter
+                        # File_link = Path(str(fullpathFile)).resolve()
+                        # linkName_U = str(folder_paths.folder_names_and_paths["diffusion_models"][0][0])
+                        # linkName_D = str(folder_paths.folder_names_and_paths["diffusion_models"][0][1])
+                        # linkedFileName = str(File_link).replace(linkName_U + '\\', '').replace(linkName_D + '\\', '')
+                        linkedFileName = ckpt_name
                         LOADED_CHECKPOINT = nodes.UNETLoader.load_unet(self, linkedFileName, 'default')
                 OUTPUT_MODEL = LOADED_CHECKPOINT[0]
 
@@ -1107,22 +1166,31 @@ class PrimereCKPTLoader:
                 OUTPUT_VAE = nodes.VAELoader.load_vae(self, sd3_unet_vae)[0]
 
             if use_sd3_hyper_lora == True:
-                SD3_LORA4 = 'https://huggingface.co/ByteDance/Hyper-SD/resolve/main/Hyper-SD3-4steps-CFG-lora.safetensors?download=true'
-                SD3_LORA8 = 'https://huggingface.co/ByteDance/Hyper-SD/resolve/main/Hyper-SD3-8steps-CFG-lora.safetensors?download=true'
-                SD3_LORA16 = 'https://huggingface.co/ByteDance/Hyper-SD/resolve/main/Hyper-SD3-16steps-CFG-lora.safetensors?download=true'
+                #liblib adapter
+                # SD3_LORA4 = 'https://huggingface.co/ByteDance/Hyper-SD/resolve/main/Hyper-SD3-4steps-CFG-lora.safetensors?download=true'
+                # SD3_LORA8 = 'https://huggingface.co/ByteDance/Hyper-SD/resolve/main/Hyper-SD3-8steps-CFG-lora.safetensors?download=true'
+                # SD3_LORA16 = 'https://huggingface.co/ByteDance/Hyper-SD/resolve/main/Hyper-SD3-16steps-CFG-lora.safetensors?download=true'
 
-                DOWNLOADED_SD3_LORA4 = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', 'Hyper-SD3-4steps-CFG-lora.safetensors')
-                DOWNLOADED_SD3_LORA8 = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', 'Hyper-SD3-8steps-CFG-lora.safetensors')
-                DOWNLOADED_SD3_LORA16 = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', 'Hyper-SD3-16steps-CFG-lora.safetensors')
+                # DOWNLOADED_SD3_LORA4 = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', 'Hyper-SD3-4steps-CFG-lora.safetensors')
+                # DOWNLOADED_SD3_LORA8 = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', 'Hyper-SD3-8steps-CFG-lora.safetensors')
+                # DOWNLOADED_SD3_LORA16 = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', 'Hyper-SD3-16steps-CFG-lora.safetensors')
 
-                utility.fileDownloader(DOWNLOADED_SD3_LORA4, SD3_LORA4)
-                utility.fileDownloader(DOWNLOADED_SD3_LORA8, SD3_LORA8)
-                utility.fileDownloader(DOWNLOADED_SD3_LORA16, SD3_LORA16)
-                downloaded_filelist_filtered = utility.getDownloadedFiles()
-                allHyperSD3Loras = list(filter(lambda a: 'hyper-sd3'.casefold() in a.casefold(), downloaded_filelist_filtered))
-                finalLoras = list(filter(lambda a: str(sd3_hyper_lora_step) + 'step'.casefold() in a.casefold(), allHyperSD3Loras))
-                LORA_FILE = finalLoras[0]
-                FULL_LORA_PATH = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', LORA_FILE)
+                # utility.fileDownloader(DOWNLOADED_SD3_LORA4, SD3_LORA4)
+                # utility.fileDownloader(DOWNLOADED_SD3_LORA8, SD3_LORA8)
+                # utility.fileDownloader(DOWNLOADED_SD3_LORA16, SD3_LORA16)
+                # downloaded_filelist_filtered = utility.getDownloadedFiles()
+                # allHyperSD3Loras = list(filter(lambda a: 'hyper-sd3'.casefold() in a.casefold(), downloaded_filelist_filtered))
+                # finalLoras = list(filter(lambda a: str(sd3_hyper_lora_step) + 'step'.casefold() in a.casefold(), allHyperSD3Loras))
+                # LORA_FILE = finalLoras[0]
+                # FULL_LORA_PATH = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', LORA_FILE)
+                if str(sd3_hyper_lora_step) == '4':
+                    FULL_LORA_PATH = get_juicefs_full_path_safemode(ComfyUI_Primere_Nodes_Lora_Mapping, 'Hyper-SD3-4steps-CFG-lora.safetensors')
+                elif str(sd3_hyper_lora_step) == '8':
+                    FULL_LORA_PATH = get_juicefs_full_path_safemode(ComfyUI_Primere_Nodes_Lora_Mapping, 'Hyper-SD3-8steps-CFG-lora.safetensors')
+                elif str(sd3_hyper_lora_step) == '16':
+                    FULL_LORA_PATH = get_juicefs_full_path_safemode(ComfyUI_Primere_Nodes_Lora_Mapping, 'Hyper-SD3-16steps-CFG-lora.safetensors')
+                else:
+                    FULL_LORA_PATH = None
 
                 if FULL_LORA_PATH is not None and os.path.exists(FULL_LORA_PATH) == True:
                     if sd3_hyper_lora_strength != 0:
@@ -1156,67 +1224,70 @@ class PrimereCKPTLoader:
                         lightning_selector = 'LORA'
 
                 HYPER_LIGHTNING_ORIGINAL_VERSION = utility.getModelType(ckpt_name, 'checkpoints')
-                if lightning_selector == 'LORA':
-                    Lightning_SDXL_2 = 'https://huggingface.co/ByteDance/SDXL-Lightning/resolve/main/sdxl_lightning_2step_lora.safetensors?download=true'
-                    DOWNLOADED_Lightning_SDXL_2 = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', 'sdxl_lightning_2step_lora.safetensors')
+                #liblib adapter 禁用下载
+                # if lightning_selector == 'LORA':
+                #     Lightning_SDXL_2 = 'https://huggingface.co/ByteDance/SDXL-Lightning/resolve/main/sdxl_lightning_2step_lora.safetensors?download=true'
+                #     DOWNLOADED_Lightning_SDXL_2 = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', 'sdxl_lightning_2step_lora.safetensors')
 
-                    Lightning_SDXL_4 = 'https://huggingface.co/ByteDance/SDXL-Lightning/resolve/main/sdxl_lightning_4step_lora.safetensors?download=true'
-                    DOWNLOADED_Lightning_SDXL_4 = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', 'sdxl_lightning_4step_lora.safetensors')
+                #     Lightning_SDXL_4 = 'https://huggingface.co/ByteDance/SDXL-Lightning/resolve/main/sdxl_lightning_4step_lora.safetensors?download=true'
+                #     DOWNLOADED_Lightning_SDXL_4 = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', 'sdxl_lightning_4step_lora.safetensors')
 
-                    Lightning_SDXL_8 = 'https://huggingface.co/ByteDance/SDXL-Lightning/resolve/main/sdxl_lightning_8step_lora.safetensors?download=true'
-                    DOWNLOADED_Lightning_SDXL_8 = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', 'sdxl_lightning_8step_lora.safetensors')
+                #     Lightning_SDXL_8 = 'https://huggingface.co/ByteDance/SDXL-Lightning/resolve/main/sdxl_lightning_8step_lora.safetensors?download=true'
+                #     DOWNLOADED_Lightning_SDXL_8 = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', 'sdxl_lightning_8step_lora.safetensors')
 
-                    utility.fileDownloader(DOWNLOADED_Lightning_SDXL_2, Lightning_SDXL_2)
-                    utility.fileDownloader(DOWNLOADED_Lightning_SDXL_4, Lightning_SDXL_4)
-                    utility.fileDownloader(DOWNLOADED_Lightning_SDXL_8, Lightning_SDXL_8)
+                #     utility.fileDownloader(DOWNLOADED_Lightning_SDXL_2, Lightning_SDXL_2)
+                #     utility.fileDownloader(DOWNLOADED_Lightning_SDXL_4, Lightning_SDXL_4)
+                #     utility.fileDownloader(DOWNLOADED_Lightning_SDXL_8, Lightning_SDXL_8)
 
-                if hypersd_selector == 'LORA':
-                    Hyper_SD_1 = 'https://huggingface.co/ByteDance/Hyper-SD/resolve/main/Hyper-SD15-1step-lora.safetensors?download=true'
-                    DOWNLOADED_Hyper_SD_1 = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', 'Hyper-SD15-1step-lora.safetensors')
-                    utility.fileDownloader(DOWNLOADED_Hyper_SD_1, Hyper_SD_1)
+                # if hypersd_selector == 'LORA':
+                #     Hyper_SD_1 = 'https://huggingface.co/ByteDance/Hyper-SD/resolve/main/Hyper-SD15-1step-lora.safetensors?download=true'
+                #     DOWNLOADED_Hyper_SD_1 = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', 'Hyper-SD15-1step-lora.safetensors')
+                #     utility.fileDownloader(DOWNLOADED_Hyper_SD_1, Hyper_SD_1)
 
-                    Hyper_SD_2 = 'https://huggingface.co/ByteDance/Hyper-SD/resolve/main/Hyper-SD15-2steps-lora.safetensors?download=true'
-                    DOWNLOADED_Hyper_SD_2 = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', 'Hyper-SD15-2steps-lora.safetensors')
-                    utility.fileDownloader(DOWNLOADED_Hyper_SD_2, Hyper_SD_2)
+                #     Hyper_SD_2 = 'https://huggingface.co/ByteDance/Hyper-SD/resolve/main/Hyper-SD15-2steps-lora.safetensors?download=true'
+                #     DOWNLOADED_Hyper_SD_2 = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', 'Hyper-SD15-2steps-lora.safetensors')
+                #     utility.fileDownloader(DOWNLOADED_Hyper_SD_2, Hyper_SD_2)
 
-                    Hyper_SD_4 = 'https://huggingface.co/ByteDance/Hyper-SD/resolve/main/Hyper-SD15-4steps-lora.safetensors?download=true'
-                    DOWNLOADED_Hyper_SD_4 = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', 'Hyper-SD15-4steps-lora.safetensors')
-                    utility.fileDownloader(DOWNLOADED_Hyper_SD_4, Hyper_SD_4)
+                #     Hyper_SD_4 = 'https://huggingface.co/ByteDance/Hyper-SD/resolve/main/Hyper-SD15-4steps-lora.safetensors?download=true'
+                #     DOWNLOADED_Hyper_SD_4 = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', 'Hyper-SD15-4steps-lora.safetensors')
+                #     utility.fileDownloader(DOWNLOADED_Hyper_SD_4, Hyper_SD_4)
 
-                    Hyper_SD_8 = 'https://huggingface.co/ByteDance/Hyper-SD/resolve/main/Hyper-SD15-8steps-lora.safetensors?download=true'
-                    DOWNLOADED_Hyper_SD_8 = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', 'Hyper-SD15-8steps-lora.safetensors')
-                    utility.fileDownloader(DOWNLOADED_Hyper_SD_8, Hyper_SD_8)
+                #     Hyper_SD_8 = 'https://huggingface.co/ByteDance/Hyper-SD/resolve/main/Hyper-SD15-8steps-lora.safetensors?download=true'
+                #     DOWNLOADED_Hyper_SD_8 = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', 'Hyper-SD15-8steps-lora.safetensors')
+                #     utility.fileDownloader(DOWNLOADED_Hyper_SD_8, Hyper_SD_8)
 
-                    Hyper_SD_12 = 'https://huggingface.co/ByteDance/Hyper-SD/resolve/main/Hyper-SD15-12steps-CFG-lora.safetensors?download=true'
-                    DOWNLOADED_Hyper_SD_12 = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', 'Hyper-SD15-12steps-CFG-lora.safetensors')
-                    utility.fileDownloader(DOWNLOADED_Hyper_SD_12, Hyper_SD_12)
+                #     Hyper_SD_12 = 'https://huggingface.co/ByteDance/Hyper-SD/resolve/main/Hyper-SD15-12steps-CFG-lora.safetensors?download=true'
+                #     DOWNLOADED_Hyper_SD_12 = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', 'Hyper-SD15-12steps-CFG-lora.safetensors')
+                #     utility.fileDownloader(DOWNLOADED_Hyper_SD_12, Hyper_SD_12)
 
-                    Hyper_SDXL_1 = 'https://huggingface.co/ByteDance/Hyper-SD/resolve/main/Hyper-SDXL-1step-lora.safetensors?download=true'
-                    DOWNLOADED_Hyper_SDXL_1 = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', 'Hyper-SDXL-1step-lora.safetensors')
-                    utility.fileDownloader(DOWNLOADED_Hyper_SDXL_1, Hyper_SDXL_1)
+                #     Hyper_SDXL_1 = 'https://huggingface.co/ByteDance/Hyper-SD/resolve/main/Hyper-SDXL-1step-lora.safetensors?download=true'
+                #     DOWNLOADED_Hyper_SDXL_1 = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', 'Hyper-SDXL-1step-lora.safetensors')
+                #     utility.fileDownloader(DOWNLOADED_Hyper_SDXL_1, Hyper_SDXL_1)
 
-                    Hyper_SDXL_2 = 'https://huggingface.co/ByteDance/Hyper-SD/resolve/main/Hyper-SDXL-2steps-lora.safetensors?download=true'
-                    DOWNLOADED_Hyper_SDXL_2 = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', 'Hyper-SDXL-2steps-lora.safetensors')
-                    utility.fileDownloader(DOWNLOADED_Hyper_SDXL_2, Hyper_SDXL_2)
+                #     Hyper_SDXL_2 = 'https://huggingface.co/ByteDance/Hyper-SD/resolve/main/Hyper-SDXL-2steps-lora.safetensors?download=true'
+                #     DOWNLOADED_Hyper_SDXL_2 = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', 'Hyper-SDXL-2steps-lora.safetensors')
+                #     utility.fileDownloader(DOWNLOADED_Hyper_SDXL_2, Hyper_SDXL_2)
 
-                    Hyper_SDXL_4 = 'https://huggingface.co/ByteDance/Hyper-SD/resolve/main/Hyper-SDXL-4steps-lora.safetensors?download=true'
-                    DOWNLOADED_Hyper_SDXL_4 = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', 'Hyper-SDXL-4steps-lora.safetensors')
-                    utility.fileDownloader(DOWNLOADED_Hyper_SDXL_4, Hyper_SDXL_4)
+                #     Hyper_SDXL_4 = 'https://huggingface.co/ByteDance/Hyper-SD/resolve/main/Hyper-SDXL-4steps-lora.safetensors?download=true'
+                #     DOWNLOADED_Hyper_SDXL_4 = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', 'Hyper-SDXL-4steps-lora.safetensors')
+                #     utility.fileDownloader(DOWNLOADED_Hyper_SDXL_4, Hyper_SDXL_4)
 
-                    Hyper_SDXL_8 = 'https://huggingface.co/ByteDance/Hyper-SD/resolve/main/Hyper-SDXL-8steps-lora.safetensors?download=true'
-                    DOWNLOADED_Hyper_SDXL_8 = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', 'Hyper-SDXL-8steps-lora.safetensors')
-                    utility.fileDownloader(DOWNLOADED_Hyper_SDXL_8, Hyper_SDXL_8)
+                #     Hyper_SDXL_8 = 'https://huggingface.co/ByteDance/Hyper-SD/resolve/main/Hyper-SDXL-8steps-lora.safetensors?download=true'
+                #     DOWNLOADED_Hyper_SDXL_8 = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', 'Hyper-SDXL-8steps-lora.safetensors')
+                #     utility.fileDownloader(DOWNLOADED_Hyper_SDXL_8, Hyper_SDXL_8)
 
-                    Hyper_SDXL_12 = 'https://huggingface.co/ByteDance/Hyper-SD/resolve/main/Hyper-SDXL-12steps-CFG-lora.safetensors?download=true'
-                    DOWNLOADED_Hyper_SDXL_12 = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', 'Hyper-SDXL-12steps-CFG-lora.safetensors')
-                    utility.fileDownloader(DOWNLOADED_Hyper_SDXL_12, Hyper_SDXL_12)
+                #     Hyper_SDXL_12 = 'https://huggingface.co/ByteDance/Hyper-SD/resolve/main/Hyper-SDXL-12steps-CFG-lora.safetensors?download=true'
+                #     DOWNLOADED_Hyper_SDXL_12 = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', 'Hyper-SDXL-12steps-CFG-lora.safetensors')
+                #     utility.fileDownloader(DOWNLOADED_Hyper_SDXL_12, Hyper_SDXL_12)
 
                 ModelConceptChanges = utility.ModelConceptNames(ckpt_name, model_concept, lightning_selector, lightning_model_step, hypersd_selector, hypersd_model_step, HYPER_LIGHTNING_ORIGINAL_VERSION)
                 ckpt_name = ModelConceptChanges['ckpt_name']
-                if ModelConceptChanges['lora_name'] is not None:
-                    lora_name = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', ModelConceptChanges['lora_name'])
-                else:
-                    lora_name = None
+                #liblib adapter
+                # if ModelConceptChanges['lora_name'] is not None:
+                #     lora_name = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', ModelConceptChanges['lora_name'])
+                # else:
+                #     lora_name = None
+                lora_name = ModelConceptChanges['lora_name']
                 unet_name = ModelConceptChanges['unet_name']
                 lightningModeValid = ModelConceptChanges['lightningModeValid']
                 hyperModeValid = ModelConceptChanges['hyperModeValid']
@@ -1240,20 +1311,26 @@ class PrimereCKPTLoader:
             case 'LCM':
                 vae_selection = True
                 if MODEL_VERSION == 'SD1' or MODEL_VERSION == 'SDXL':
-                    SDXL_LORA = 'https://huggingface.co/latent-consistency/lcm-lora-sdxl/resolve/main/pytorch_lora_weights.safetensors?download=true'
-                    SD_LORA = 'https://huggingface.co/latent-consistency/lcm-lora-sdv1-5/resolve/main/pytorch_lora_weights.safetensors?download=true'
+                    #liblib adapter 禁用下载
+                    # SDXL_LORA = 'https://huggingface.co/latent-consistency/lcm-lora-sdxl/resolve/main/pytorch_lora_weights.safetensors?download=true'
+                    # SD_LORA = 'https://huggingface.co/latent-consistency/lcm-lora-sdv1-5/resolve/main/pytorch_lora_weights.safetensors?download=true'
 
-                    DOWNLOADED_SD_LORA = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', 'lcm_lora_sd.safetensors')
-                    DOWNLOADED_SDXL_LORA = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', 'lcm_lora_sdxl.safetensors')
+                    # DOWNLOADED_SD_LORA = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', 'lcm_lora_sd.safetensors')
+                    # DOWNLOADED_SDXL_LORA = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', 'lcm_lora_sdxl.safetensors')
 
-                    utility.fileDownloader(DOWNLOADED_SD_LORA, SD_LORA)
-                    utility.fileDownloader(DOWNLOADED_SDXL_LORA, SDXL_LORA)
+                    # utility.fileDownloader(DOWNLOADED_SD_LORA, SD_LORA)
+                    # utility.fileDownloader(DOWNLOADED_SDXL_LORA, SDXL_LORA)
 
+                    # LORA_PATH = None
+                    # if MODEL_VERSION == 'SDXL':
+                    #     LORA_PATH = DOWNLOADED_SDXL_LORA
+                    # elif MODEL_VERSION == 'SD1':
+                    #     LORA_PATH = DOWNLOADED_SD_LORA
                     LORA_PATH = None
                     if MODEL_VERSION == 'SDXL':
-                        LORA_PATH = DOWNLOADED_SDXL_LORA
+                        LORA_PATH = get_juicefs_full_path_safemode(ComfyUI_Primere_Nodes_Lora_Mapping, "lcm_lora_sdxl.safetensors")
                     elif MODEL_VERSION == 'SD1':
-                        LORA_PATH = DOWNLOADED_SD_LORA
+                        LORA_PATH = get_juicefs_full_path_safemode(ComfyUI_Primere_Nodes_Lora_Mapping, "lcm_lora_sd.safetensors")
 
                     if LORA_PATH is not None and os.path.exists(LORA_PATH) == True:
                         if strength_lcm_lora_model != 0:
@@ -1285,11 +1362,15 @@ class PrimereCKPTLoader:
             else:
                 vae_list = folder_paths.get_filename_list("vae")
                 if MODEL_VERSION == 'SD1':
-                    allLSD1vae = list(filter(lambda a: 'sdxl'.casefold() not in a.casefold() and 'flux'.casefold() not in a.casefold() and 'hunyuan'.casefold() not in a.casefold() and 'stage'.casefold() not in a.casefold(), vae_list))
-                    OUTPUT_VAE = nodes.VAELoader.load_vae(self, allLSD1vae[0])[0]
+                    #liblib adapter 
+                    # allLSD1vae = list(filter(lambda a: 'sdxl'.casefold() not in a.casefold() and 'flux'.casefold() not in a.casefold() and 'hunyuan'.casefold() not in a.casefold() and 'stage'.casefold() not in a.casefold(), vae_list))
+                    # OUTPUT_VAE = nodes.VAELoader.load_vae(self, allLSD1vae[0])[0]
+                    OUTPUT_VAE = get_juicefs_full_path_safemode(VAE_MAPPINGS, "vae-ft-mse-840000-ema-pruned.safetensors")
                 else:
-                    allLSDXLvae = list(filter(lambda a: 'sdxl_'.casefold() in a.casefold(), vae_list))
-                    OUTPUT_VAE = nodes.VAELoader.load_vae(self, allLSDXLvae[0])[0]
+                    #liblib adapter 
+                    # allLSDXLvae = list(filter(lambda a: 'sdxl_'.casefold() in a.casefold(), vae_list))
+                    # OUTPUT_VAE = nodes.VAELoader.load_vae(self, allLSDXLvae[0])[0]
+                    OUTPUT_VAE = get_juicefs_full_path_safemode(VAE_MAPPINGS, "sd_xl_vae_1.0")
         else:
             OUTPUT_VAE = LOADED_CHECKPOINT[2]
 
@@ -1544,8 +1625,11 @@ class PrimereCLIP:
                 "positive_prompt": ("STRING", {"forceInput": True}),
                 "negative_prompt": ("STRING", {"forceInput": True}),
                 "clip_mode": ("BOOLEAN", {"default": True, "label_on": "CLIP", "label_off": "Long-CLIP"}),
-                "clip_model": (['Default'] + sorted(cls.CLIPLIST),),
-                "longclip_model": (['Default'] + sorted(cls.CLIPLIST),),
+                # liblib adapter
+                # "clip_model": (['Default'] + sorted(cls.CLIPLIST),),
+                # "longclip_model": (['Default'] + sorted(cls.CLIPLIST),),
+                "clip_model": (['Default'] + get_field_pre_values("PrimereCLIP", "clip_model"),),
+                "longclip_model": (['Default'] + get_field_pre_values("PrimereCLIP", "longclip_model"),),
                 "last_layer": ("INT", {"default": 0, "min": -24, "max": 0, "step": 1}),
                 "negative_strength": ("FLOAT", {"default": 1.2, "min": 0.0, "max": 10.0, "step": 0.01}),
                 "use_int_style": ("BOOLEAN", {"default": False}),
@@ -1921,21 +2005,24 @@ class PrimereCLIP:
 
         if clip_mode == False:
             if longclip_model == 'Default':
-                longclip_model = 'longclip-L.pt'
+                # liblib adapter
+                # longclip_model = 'longclip-L.pt'
+                longclip_model = get_juicefs_full_path_safemode(LONG_CLIP_MAPPINGS, "longclip-L.pt")
+            # liblib adapter
+            # LONGCLIPL_PATH = os.path.join(folder_paths.models_dir, 'clip')
+            # if os.path.exists(LONGCLIPL_PATH) == False:
+            #     Path(LONGCLIPL_PATH).mkdir(parents=True, exist_ok=True)
+            # clipFiles = folder_paths.get_filename_list("clip")
 
-            LONGCLIPL_PATH = os.path.join(folder_paths.models_dir, 'clip')
-            if os.path.exists(LONGCLIPL_PATH) == False:
-                Path(LONGCLIPL_PATH).mkdir(parents=True, exist_ok=True)
-            clipFiles = folder_paths.get_filename_list("clip")
+            # if longclip_model not in clipFiles and longclip_model == 'Default':
+            #     FileUrl = 'https://huggingface.co/BeichenZhang/LongCLIP-L/resolve/main/longclip-L.pt?download=true'
+            #     FullFilePath = os.path.join(LONGCLIPL_PATH, 'longclip-L.pt')
+            #     ModelDownload = utility.downloader(FileUrl, FullFilePath)
+            #     if (ModelDownload == True):
+            #         clipFiles = folder_paths.get_filename_list("clip")
 
-            if longclip_model not in clipFiles and longclip_model == 'Default':
-                FileUrl = 'https://huggingface.co/BeichenZhang/LongCLIP-L/resolve/main/longclip-L.pt?download=true'
-                FullFilePath = os.path.join(LONGCLIPL_PATH, 'longclip-L.pt')
-                ModelDownload = utility.downloader(FileUrl, FullFilePath)
-                if (ModelDownload == True):
-                    clipFiles = folder_paths.get_filename_list("clip")
-
-            if longclip_model in clipFiles:
+            # if longclip_model in clipFiles:
+            if longclip_model is not None:
                 if model_concept == 'Normal' and (CONCEPT_SELECTOR == 'Normal' or CONCEPT_SELECTOR is None):
                     if (is_sdxl == 0):
                         clip = long_clip.SDLongClip.sd_longclip(self, longclip_model)[0]
@@ -1997,14 +2084,16 @@ class PrimereCLIP:
         if clip_model != 'Default' and clip_mode == True:
             if is_sdxl == 1:
                 # adv_encode = False
-                clip_model_g = 'clip_g.safetensors'
-                clip_g_path = folder_paths.get_full_path("clip", clip_model_g)
+                #liblib adapter
+                # clip_model_g = 'clip_g.safetensors'
+                # clip_g_path = folder_paths.get_full_path("clip", clip_model_g)
+                clip_g_path = get_juicefs_full_path_safemode(CLIP_MAPPINGS, "clip_g")
                 if clip_g_path is not None:
                     if model_concept == 'Flux':
                         concept_type = 'flux'
                     else:
                         concept_type = 'sdxl'
-                    clip = nodes.DualCLIPLoader.load_clip(self, clip_model, clip_model_g, concept_type)[0]
+                    clip = nodes.DualCLIPLoader.load_clip(self, clip_model, clip_g_path, concept_type)[0]
             else:
                 clip_path = folder_paths.get_full_path("clip", clip_model)
                 if clip_path is not None:
@@ -2202,7 +2291,9 @@ class PrimereResolutionMultiplierMPX:
                 "image": ("IMAGE", {"forceInput": True}),
                 "area_trigger_mpx": ("FLOAT", {"default": 0.60, "min": 0.01, "max": round(pow(utility.MAX_RESOLUTION, 2) / 1000000, 2), "step": 0.01}),
                 "area_target_mpx": ("FLOAT", {"default": 1.05, "min": 0.25, "max": round(pow(utility.MAX_RESOLUTION, 2) / 1000000, 2), "step": 0.01}),
-                "upscale_model": (['None'] + folder_paths.get_filename_list("upscale_models"), {"default": 'None'}),
+                # liblib adapter
+                # "upscale_model": (['None'] + folder_paths.get_filename_list("upscale_models"), {"default": 'None'}),
+                "upscale_model": (['None'] + get_field_pre_values("PrimereResolutionMultiplierMPX", "upscale_model"), {"default": 'None'}),
                 "upscale_method": (cls.upscale_methods, {"default": 'bicubic'}),
             }
         }
@@ -2268,7 +2359,9 @@ class PrimereResolutionCoordinatorMPX:
                 "slave_image": ("IMAGE", {"forceInput": True}),
                 "resize_to_mpx": ("FLOAT", {"default": 1.00, "min": 0.01, "max": 48.00, "step": 0.01}),
                 "keep_slave_ratio": ("BOOLEAN", {"default": False}),
-                "upscale_model": (['None'] + folder_paths.get_filename_list("upscale_models"), {"default": 'None'}),
+                # liblib adapter
+                # "upscale_model": (['None'] + folder_paths.get_filename_list("upscale_models"), {"default": 'None'}),
+                "upscale_model": (['None'] + get_field_pre_values("PrimereResolutionCoordinatorMPX", "upscale_model"), {"default": 'None'}),
                 "upscale_method": (cls.upscale_methods, {"default": 'lanczos'}),
             }
         }
@@ -2844,7 +2937,9 @@ class PrimereUpscaleModel:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "model_name": (folder_paths.get_filename_list("upscale_models"),),
+                #liblib adapter
+                # "model_name": (folder_paths.get_filename_list("upscale_models"),),
+                "model_name": (get_field_pre_values("PrimereUpscaleModel", "model_name"),),
             }
         }
 

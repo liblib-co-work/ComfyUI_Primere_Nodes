@@ -27,6 +27,9 @@ from .modules import exif_data_checker
 from ..Nodes.Visuals import PrimereVisualCKPT
 from ..Nodes.Visuals import PrimereVisualStyle
 
+from configs.config import get_juicefs_full_path_safemode
+from configs.node_fields import ComfyUI_Primere_Nodes_Model_Mapping
+
 ALLOWED_EXT = ('.jpeg', '.jpg', '.png', '.tiff', '.gif', '.bmp', '.webp')
 
 class PrimereMetaSave:
@@ -269,6 +272,8 @@ class PrimereMetaSave:
                     if 'model' in image_metadata:
                         checkpointpaths = folder_paths.get_folder_paths("checkpoints")[0]
                         model_full_path = checkpointpaths + os.sep + image_metadata['model']
+                        #liblib adapter
+                        model_full_path = image_metadata['model']
                         image_metadata['model_hash'] = exif_data_checker.get_model_hash(model_full_path)
 
                 if 'is_sdxl' not in image_metadata:
@@ -748,7 +753,7 @@ class PrimereKSampler:
         original_model_concept_selector = utility.getDataFromWorkflowByName(WORKFLOWDATA, 'PrimereModelConceptSelector', 'model_concept', prompt)
         is_random_model = utility.getDataFromWorkflowByName(WORKFLOWDATA, 'PrimereVisualCKPT', 'random_model', prompt)
         selected_model = utility.getDataFromWorkflowByName(WORKFLOWDATA, 'PrimereVisualCKPT', 'base_model', prompt)
-        if is_random_model == True:
+        if is_random_model == True:#liblib adapter 这里虽然随机，但由于无法拿到lib的，所以这里只会随机到空
             fullSource = PrimereVisualCKPT.allModels
             slashIndex = selected_model.find('\\')
             if slashIndex > 0:
@@ -894,25 +899,28 @@ class PrimereAestheticCKPTScorer():
         final_prediction = '*** Aesthetic scorer off ***'
 
         if (get_aesthetic_score == True):
-            AESTHETIC_PATH = os.path.join(folder_paths.models_dir, 'aesthetic')
-            folder_paths.add_model_folder_path("aesthetic", AESTHETIC_PATH)
-            if os.path.exists(AESTHETIC_PATH) == False:
-                Path(AESTHETIC_PATH).mkdir(parents=True, exist_ok=True)
-            AESTH_FULL_LIST = folder_paths.get_filename_list("aesthetic")
-            aestheticFiles = folder_paths.filter_files_extensions(AESTH_FULL_LIST, ['.pth'])
+            #liblib adapter
+            # AESTHETIC_PATH = os.path.join(folder_paths.models_dir, 'aesthetic')
+            # folder_paths.add_model_folder_path("aesthetic", AESTHETIC_PATH)
+            # if os.path.exists(AESTHETIC_PATH) == False:
+            #     Path(AESTHETIC_PATH).mkdir(parents=True, exist_ok=True)
+            # AESTH_FULL_LIST = folder_paths.get_filename_list("aesthetic")
+            # aestheticFiles = folder_paths.filter_files_extensions(AESTH_FULL_LIST, ['.pth'])
 
-            if 'chadscorer.pth' not in aestheticFiles:
-                FileUrl = 'https://huggingface.co/primerecomfydev/chadscorer/resolve/main/chadscorer.pth?download=true'
-                FullFilePath = os.path.join(AESTHETIC_PATH, 'chadscorer.pth')
-                ModelDownload = utility.downloader(FileUrl, FullFilePath)
-                if (ModelDownload == True):
-                    AESTH_FULL_LIST = folder_paths.get_filename_list("aesthetic")
-                    aestheticFiles = folder_paths.filter_files_extensions(AESTH_FULL_LIST, ['.pth'])
+            # if 'chadscorer.pth' not in aestheticFiles:
+            #     FileUrl = 'https://huggingface.co/primerecomfydev/chadscorer/resolve/main/chadscorer.pth?download=true'
+            #     FullFilePath = os.path.join(AESTHETIC_PATH, 'chadscorer.pth')
+            #     ModelDownload = utility.downloader(FileUrl, FullFilePath)
+            #     if (ModelDownload == True):
+            #         AESTH_FULL_LIST = folder_paths.get_filename_list("aesthetic")
+            #         aestheticFiles = folder_paths.filter_files_extensions(AESTH_FULL_LIST, ['.pth'])
 
-            if 'chadscorer.pth' in aestheticFiles:
-                folder_paths.folder_names_and_paths["aesthetic"] = ([os.path.join(folder_paths.models_dir, "aesthetic")], folder_paths.supported_pt_extensions)
-                m_path = folder_paths.folder_names_and_paths["aesthetic"][0]
-                aesthetic_model = os.path.join(m_path[0], 'chadscorer.pth')
+            # if 'chadscorer.pth' in aestheticFiles:
+            #     folder_paths.folder_names_and_paths["aesthetic"] = ([os.path.join(folder_paths.models_dir, "aesthetic")], folder_paths.supported_pt_extensions)
+            #     m_path = folder_paths.folder_names_and_paths["aesthetic"][0]
+            #     aesthetic_model = os.path.join(m_path[0], 'chadscorer.pth')
+            aesthetic_model = get_juicefs_full_path_safemode(ComfyUI_Primere_Nodes_Model_Mapping, 'chadscorer.pth')
+            if aesthetic_model is not None:
                 fsize = os.path.getsize(aesthetic_model)
                 freemem = comfy.model_management.get_free_memory()
                 if (fsize * 1.2) < freemem:

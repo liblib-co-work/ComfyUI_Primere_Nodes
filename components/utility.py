@@ -30,6 +30,9 @@ from comfy_extras.nodes_model_advanced import ModelSamplingDiscreteDistilled
 from tqdm.auto import trange
 import comfy.model_detection as model_detection
 
+from configs.config import get_juicefs_full_path_safemode
+from configs.node_fields import ComfyUI_Primere_Nodes_Lora_Mapping
+
 here = Path(__file__).parent.parent.absolute()
 comfy_dir = str(here.parent.parent)
 cache_dir = os.path.join(here, 'Nodes', '.cache')
@@ -714,11 +717,11 @@ def ModelConceptNames(ckpt_name, model_concept, lightning_selector, lightning_mo
     unet_name = None
     lightningModeValid = False
     hyperModeValid = False
-
-    LoraList = getDownloadedFiles()
+    #liblib adapter
+    # LoraList = getDownloadedFiles()
 
     if model_concept == 'Lightning':
-        if lightning_selector == 'SAFETENSOR':
+        if lightning_selector == 'SAFETENSOR':#liblib adapter 注意，这里本意是使用lightning 模型来替代而非lora，但实际用途不大，让其无法找到即可
             allCheckpoints = folder_paths.get_filename_list("checkpoints")
             allLightning = list(filter(lambda a: 'sdxl_lightning_'.casefold() in a.casefold(), allCheckpoints))
             if len(allLightning) > 0:
@@ -729,15 +732,25 @@ def ModelConceptNames(ckpt_name, model_concept, lightning_selector, lightning_mo
 
         if lightning_selector == 'LORA':
             # LoraList = folder_paths.get_filename_list("loras")
-            if len(LoraList) > 0:
-                allLoraLightning = list(filter(lambda a: 'sdxl_lightning_'.casefold() in a.casefold(), LoraList))
-                if len(allLoraLightning) > 0:
-                    finalLightning = list(filter(lambda a: str(lightning_model_step) + 'step'.casefold() in a.casefold(), allLoraLightning))
-                    if len(finalLightning) > 0:
-                        lightningModeValid = True
-                        lora_name = finalLightning[0]
+            #liblib adapter
+            # if len(LoraList) > 0:
+            #     allLoraLightning = list(filter(lambda a: 'sdxl_lightning_'.casefold() in a.casefold(), LoraList))
+            #     if len(allLoraLightning) > 0:
+            #         finalLightning = list(filter(lambda a: str(lightning_model_step) + 'step'.casefold() in a.casefold(), allLoraLightning))
+            #         if len(finalLightning) > 0:
+            #             lightningModeValid = True
+            #             lora_name = finalLightning[0]
+            if str(lightning_model_step) == '2':
+                lora_name = get_juicefs_full_path_safemode(ComfyUI_Primere_Nodes_Lora_Mapping, "sdxl_lightning_2step_lora.safetensors")
+                lightningModeValid = True
+            elif str(lightning_model_step) == '4':
+                lora_name = get_juicefs_full_path_safemode(ComfyUI_Primere_Nodes_Lora_Mapping, "sdxl_lightning_4step_lora.safetensors")
+                lightningModeValid = True
+            elif str(lightning_model_step) == '8':
+                lora_name = get_juicefs_full_path_safemode(ComfyUI_Primere_Nodes_Lora_Mapping, "sdxl_lightning_8step_lora.safetensors")
+                lightningModeValid = True
 
-        if lightning_selector == 'UNET':
+        if lightning_selector == 'UNET':#liblib adapter unet的lightning模型????
             UnetList = folder_paths.get_filename_list("unet")
             if len(UnetList) > 0:
                 allUnetLightning = list(filter(lambda a: 'sdxl_lightning_'.casefold() in a.casefold(), UnetList))
@@ -749,23 +762,56 @@ def ModelConceptNames(ckpt_name, model_concept, lightning_selector, lightning_mo
 
     if model_concept == 'Hyper':
         if hypersd_selector == 'LORA':
-            if len(LoraList) > 0:
-                if model_version == 'SDXL':
-                    allLoraHyper = list(filter(lambda a: 'Hyper-SDXL-'.casefold() in a.casefold(), LoraList))
-                else:
-                    allLoraHyper = list(filter(lambda a: 'Hyper-SD15-'.casefold() in a.casefold(), LoraList))
-                if len(allLoraHyper) > 0:
-                    pluralString = ''
-                    if hypersd_model_step > 1:
-                        pluralString = 's'
+            #liblib adapter
+            # if len(LoraList) > 0:
+            #     if model_version == 'SDXL':
+            #         allLoraHyper = list(filter(lambda a: 'Hyper-SDXL-'.casefold() in a.casefold(), LoraList))
+            #     else:
+            #         allLoraHyper = list(filter(lambda a: 'Hyper-SD15-'.casefold() in a.casefold(), LoraList))
+            #     if len(allLoraHyper) > 0:
+            #         pluralString = ''
+            #         if hypersd_model_step > 1:
+            #             pluralString = 's'
 
-                    finalHyper = list(filter(lambda a: str(hypersd_model_step) + 'step' + pluralString + '-lora'.casefold() in a.casefold() or str(hypersd_model_step) + 'step' + pluralString + '-CFG-lora'.casefold() in a.casefold(), allLoraHyper))
-                    if len(finalHyper) > 0:
-                        hyperModeValid = True
-                        lora_name = finalHyper[0]
+            #         finalHyper = list(filter(lambda a: str(hypersd_model_step) + 'step' + pluralString + '-lora'.casefold() in a.casefold() or str(hypersd_model_step) + 'step' + pluralString + '-CFG-lora'.casefold() in a.casefold(), allLoraHyper))
+            #         if len(finalHyper) > 0:
+            #             hyperModeValid = True
+            #             lora_name = finalHyper[0]
+            if model_version == 'SDXL':
+                if str(hypersd_model_step) == '1':
+                    lora_name = get_juicefs_full_path_safemode(ComfyUI_Primere_Nodes_Lora_Mapping, "Hyper-SDXL-1step-lora.safetensors")
+                    hyperModeValid = True
+                elif str(hypersd_model_step) == '2':
+                    lora_name = get_juicefs_full_path_safemode(ComfyUI_Primere_Nodes_Lora_Mapping, "Hyper-SDXL-2steps-lora.safetensors")
+                    hyperModeValid = True
+                elif str(hypersd_model_step) == '4':
+                    lora_name = get_juicefs_full_path_safemode(ComfyUI_Primere_Nodes_Lora_Mapping, "Hyper-SDXL-4steps-lora.safetensors")
+                    hyperModeValid = True
+                elif str(hypersd_model_step) == '8':
+                    lora_name = get_juicefs_full_path_safemode(ComfyUI_Primere_Nodes_Lora_Mapping, "Hyper-SDXL-8steps-lora.safetensors")
+                    hyperModeValid = True
+                elif str(hypersd_model_step) == '12':
+                    lora_name = get_juicefs_full_path_safemode(ComfyUI_Primere_Nodes_Lora_Mapping, "Hyper-SDXL-12steps-CFG-lora.safetensors")
+                    hyperModeValid = True
+            else:
+                if str(hypersd_model_step) == '1':
+                    lora_name = get_juicefs_full_path_safemode(ComfyUI_Primere_Nodes_Lora_Mapping, "Hyper-SD15-1step-lora.safetensors")
+                    hyperModeValid = True
+                elif str(hypersd_model_step) == '2':
+                    lora_name = get_juicefs_full_path_safemode(ComfyUI_Primere_Nodes_Lora_Mapping, "Hyper-SD15-2steps-lora.safetensors")
+                    hyperModeValid = True
+                elif str(hypersd_model_step) == '4':
+                    lora_name = get_juicefs_full_path_safemode(ComfyUI_Primere_Nodes_Lora_Mapping, "Hyper-SD15-4steps-lora.safetensors")
+                    hyperModeValid = True
+                elif str(hypersd_model_step) == '8':
+                    lora_name = get_juicefs_full_path_safemode(ComfyUI_Primere_Nodes_Lora_Mapping, "Hyper-SD15-8steps-lora.safetensors")
+                    hyperModeValid = True
+                elif str(hypersd_model_step) == '12':
+                    lora_name = get_juicefs_full_path_safemode(ComfyUI_Primere_Nodes_Lora_Mapping, "Hyper-SD15-12steps-lora.safetensors")
+                    hyperModeValid = True
 
         if hypersd_selector == 'UNET':
-            UnetList = folder_paths.get_filename_list("unet")
+            UnetList = folder_paths.get_filename_list("unet")#liblib adapter unet的Hyper模型????
             if len(UnetList) > 0:
                 allUnetHyper = list(filter(lambda a: 'Hyper-SDXL-1step-Unet-Comfyui'.casefold() in a.casefold(), UnetList))
                 if len(allUnetHyper) > 0:

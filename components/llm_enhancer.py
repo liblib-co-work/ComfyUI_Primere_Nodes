@@ -10,13 +10,19 @@ import random
 import re
 from ..components import utility
 
+from configs.config import get_juicefs_full_path_safemode
+from configs.node_fields import ComfyUI_Primere_Nodes_LLM_Enhancer_Mapping
+
 class PromptEnhancerLLM:
     def __init__(self, model_path: str = "flan-t5-small"):
-        model_access = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', 'LLM', model_path)
+        #liblib adapter
+        # model_access = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', 'LLM', model_path)
+        model_access = get_juicefs_full_path_safemode(ComfyUI_Primere_Nodes_LLM_Enhancer_Mapping, model_path)
         self.model_path = model_path
         self.model_fullpath = model_access
         self.device = torch.cuda.current_device()  # "cuda" if torch.cuda.is_available() else "cpu"
 
+        #liblib adapter 目前没有加这个模型，所以不管这个
         if '-promptenhancing' in self.model_path.lower() and '-instruct' in self.model_path.lower():
             baseRepo = self.model_path[:self.model_path.lower().index("-promptenhancing")]
             loraRepo = self.model_path
@@ -320,7 +326,9 @@ class PromptEnhancerLLM:
             return False
 
 def PrimereLLMEnhance(modelKey = 'flan-t5-small', promptInput = 'cute cat', seed = 1, precision = True, configurator = "default"):
-    model_access = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', 'LLM', modelKey)
+    #liblib adapter
+    # model_access = os.path.join(PRIMERE_ROOT, 'Nodes', 'Downloads', 'LLM', modelKey)
+    model_access = get_juicefs_full_path_safemode(ComfyUI_Primere_Nodes_LLM_Enhancer_Mapping, modelKey)
     if os.path.isdir(model_access) == True:
         enhancer = PromptEnhancerLLM(modelKey)
         promptInput = utility.DiT_cleaner(promptInput)

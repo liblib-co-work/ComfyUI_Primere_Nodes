@@ -25,6 +25,9 @@ import json
 from ..components import llm_enhancer
 import datetime
 
+from configs.config import get_juicefs_full_path_safemode
+from configs.node_fields import get_field_pre_values,ComfyUI_Primere_Nodes_Model_Mapping,ComfyUI_Primere_Nodes_LLM_Enhancer_Mapping
+
 class PrimereDoublePrompt:
     RETURN_TYPES = ("STRING", "STRING", "STRING", "STRING", "STRING", "STRING")
     RETURN_NAMES = ("PROMPT+", "PROMPT-", "SUBPATH", "MODEL", "ORIENTATION", "PREFERRED")
@@ -106,7 +109,9 @@ class PrimereRefinerPrompt:
         return {
             "required": {
                 "refiner_model": (['None'] + folder_paths.get_filename_list("checkpoints"),),
-                "refiner_vae": (['None'] + folder_paths.get_filename_list("vae"),),
+                #liblib adapter
+                # "refiner_vae": (['None'] + folder_paths.get_filename_list("vae"),),
+                "refiner_vae": (['None'] + get_field_pre_values("PrimereRefinerPrompt", "refiner_vae"),),
                 "refiner_network": (['None'] + REFINER_LORA + REFINER_LYCORIS + REFINER_EMBEDDING + REFINER_HYPERNETWORK,),
                 "refiner_network_weight": ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01, },),
                 "refiner_network_insertion": ("BOOLEAN", {"default": True, "label_on": "POSITIVE", "label_off": "NEGATIVE"}),
@@ -364,7 +369,9 @@ class PrimereLLMEnhancer:
             "required": {
                 "prompt": ("STRING", {"default": False, "forceInput": True}),
                 "seed": ("INT", {"default": 0, "min": 0, "max": (2**32) - 1, "forceInput": True}),
-                "llm_model_path": (['None'] + cls.valid_llm_path,),
+                #liblib adapter 为什么这里不使用其他的方式？因为这个传递链路中，对名称进行多次处理，为减少处理，这里直接使用预置的模型名称
+                # "llm_model_path": (['None'] + cls.valid_llm_path,),
+                "llm_model_path": (['None'] + list(ComfyUI_Primere_Nodes_LLM_Enhancer_Mapping.keys()),),
                 "precision": ("BOOLEAN", {"default": True, "label_on": "FP32", "label_off": "FP16"}),
                 "configurator": (cls.configurators,)
             }
@@ -648,6 +655,8 @@ class PrimereMetaHandler:
                     if model_version is None and (wf_model_concept == "Normal" or wf_model_concept is None):
                         checkpointpaths = folder_paths.get_folder_paths("checkpoints")[0]
                         model_full_path = checkpointpaths + os.sep + workflow_tuple['model']
+                        #liblib adapter
+                        model_full_path = workflow_tuple['model']
                         model_file = Path(model_full_path)
                         if model_file.is_file() == True:
                             # LOADED_CHECKPOINT = nodes.CheckpointLoaderSimple.load_checkpoint(self, workflow_tuple['model'])
@@ -814,6 +823,8 @@ class PrimereMetaHandler:
                     if model_version is None and meta_model_concept == 'Normal':
                         checkpointpaths = folder_paths.get_folder_paths("checkpoints")[0]
                         model_full_path = checkpointpaths + os.sep + workflow_tuple['model']
+                        # liblib adapter
+                        model_full_path = workflow_tuple['model']
                         model_file = Path(model_full_path)
                         if model_file.is_file() == True:
                             # LOADED_CHECKPOINT = nodes.CheckpointLoaderSimple.load_checkpoint(self, workflow_tuple['model'])
@@ -948,7 +959,9 @@ class PrimereMetaHandler:
                 workflow_tuple['pic2story'] = 'OFF'
 
             if kwargs['prompt_surce'] == False and workflow_tuple is not None:
-                repo_id = "abhijit2111/Pic2Story"
+                #liblib adapter
+                # repo_id = "abhijit2111/Pic2Story"
+                repo_id = get_juicefs_full_path_safemode(ComfyUI_Primere_Nodes_Model_Mapping, "abhijit2111/Pic2Story")
                 prompts = ['Image of', 'Image creation style is', 'Colours on the picture']
 
                 story_out = utility.Pic2Story(repo_id, img, prompts, True, True)
